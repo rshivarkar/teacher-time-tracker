@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daycare Staff Check-in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://fav.farm/🧸" />
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo-area">
+                <span class="icon">🧸</span>
+                <h1>Staff Tracker</h1>
+            </div>
+            <div class="date-display">
+                <h2 id="current-day">Loading...</h2>
+                <p id="current-date">Loading...</p>
+                <p id="current-time">Loading...</p>
+            </div>
+        </header>
+
+        <main>
+            <div class="status-card" id="status-card">
+                <div class="status-indicator">
+                    <span class="dot"></span>
+                    <span id="status-text">Ready to Log</span>
+                </div>
+            </div>
+
+            <div class="action-area">
+                <button id="btn-checkin" class="action-btn checkin">
+                    <span class="btn-icon">☀️</span>
+                    <span class="btn-text">Check In</span>
+                    <span class="btn-sub">Start your day</span>
+                </button>
+
+                <button id="btn-checkout" class="action-btn checkout">
+                    <span class="btn-icon">🌙</span>
+                    <span class="btn-text">Check Out</span>
+                    <span class="btn-sub">End your day</span>
+                </button>
+            </div>
+
+            <div id="message-area" class="message-area hidden"></div>
+        </main>
+
+        <footer>
+            <p>Teacher Time Tracker &copy; <span id="year">2025</span></p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
