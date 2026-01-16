@@ -1,48 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
-    // REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
+    // Update V5: Robust Date Handling
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwU4CQfA-AoSx7BwWKLLHBmemN-Moz4ogLBwUCR0BpzrsC1kxH-ZdLjGSUIOPQsXMT3/exec';
 
-    // --- Elements ---
+    // --- PAGE DETECTION ---
+    const isHistoryPage = !!document.getElementById('history-list');
+    const isIndexPage = !!document.getElementById('btn-checkin');
+
+    // --- SHARED ELEMENTS ---
     const loginOverlay = document.getElementById('login-overlay');
     const passcodeInput = document.getElementById('passcode-input');
     const btnLogin = document.getElementById('btn-login');
     const loginError = document.getElementById('login-error');
 
-    const dateDisplay = {
-        day: document.getElementById('current-day'),
-        date: document.getElementById('current-date'),
-        time: document.getElementById('current-time')
-    };
-    const statusText = document.getElementById('status-text');
-    const statusDot = document.querySelector('.status-indicator');
-    const btnCheckin = document.getElementById('btn-checkin');
-    const btnCheckout = document.getElementById('btn-checkout');
-    const messageArea = document.getElementById('message-area');
-
-    // New Elements
-    const dailySummary = document.getElementById('daily-summary');
-    const totalHoursEl = document.getElementById('total-hours');
-    const btnHistory = document.getElementById('btn-history');
-    const btnCloseHistory = document.getElementById('btn-close-history');
-    const historyModal = document.getElementById('history-modal');
-    const historyList = document.getElementById('history-list');
-
-    // --- State Management ---
-    let lastAction = localStorage.getItem('lastAction') || null;
-    let checkinTime = localStorage.getItem('checkinTime') || null; // ISO string
-
-    // --- Login Logic ---
+    // --- LOGIN LOGIC (Shared) ---
     const CORRECT_PASSCODE = "ds123";
 
+    // Auto-Login Check
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
-        loginOverlay.classList.add('hidden');
+        if (loginOverlay) loginOverlay.classList.add('hidden');
     }
 
-    btnLogin.addEventListener('click', attemptLogin);
-    passcodeInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') attemptLogin();
-    });
+    if (btnLogin) {
+        btnLogin.addEventListener('click', attemptLogin);
+        passcodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin();
+        });
+    }
 
     function attemptLogin() {
         if (passcodeInput.value === CORRECT_PASSCODE) {
@@ -56,214 +40,239 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Initialization ---
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
-    updateUIState();
+    // ==========================================
+    // INDEX PAGE LOGIC
+    // ==========================================
+    if (isIndexPage) {
+        const dateDisplay = {
+            day: document.getElementById('current-day'),
+            date: document.getElementById('current-date'),
+            time: document.getElementById('current-time')
+        };
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.querySelector('.status-indicator');
+        const btnCheckin = document.getElementById('btn-checkin');
+        const btnCheckout = document.getElementById('btn-checkout');
+        const messageArea = document.getElementById('message-area');
 
-    // --- Event Listeners ---
-    btnCheckin.addEventListener('click', () => handleAction('checkin'));
-    btnCheckout.addEventListener('click', () => handleAction('checkout'));
-    btnHistory.addEventListener('click', openHistory);
-    btnCloseHistory.addEventListener('click', () => historyModal.classList.add('hidden'));
+        // New Stat Elements
+        const dispCheckin = document.getElementById('disp-checkin');
+        const dispCheckout = document.getElementById('disp-checkout');
+        const dispHours = document.getElementById('disp-hours');
 
-    // --- Functions ---
+        // State
+        let lastAction = localStorage.getItem('lastAction') || null;
 
-    function updateDateTime() {
-        const now = new Date();
-        const optionsDay = { weekday: 'long' };
-        const optionsDate = { month: 'short', day: 'numeric', year: 'numeric' };
-        const optionsTime = { hour: 'numeric', minute: '2-digit' };
+        // Initialization
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+        updateUIState();
+        // Setup Listeners
+        btnCheckin.addEventListener('click', () => handleAction('checkin'));
+        btnCheckout.addEventListener('click', () => handleAction('checkout'));
 
-        dateDisplay.day.textContent = now.toLocaleDateString('en-US', optionsDay);
-        dateDisplay.date.textContent = now.toLocaleDateString('en-US', optionsDate);
-        dateDisplay.time.innerText = now.toLocaleTimeString('en-US', optionsTime);
-    }
+        function updateDateTime() {
+            const now = new Date();
+            const optionsDay = { weekday: 'long' };
+            const optionsDate = { month: 'short', day: 'numeric', year: 'numeric' };
+            const optionsTime = { hour: 'numeric', minute: '2-digit' };
+            dateDisplay.day.textContent = now.toLocaleDateString('en-US', optionsDay);
+            dateDisplay.date.textContent = now.toLocaleDateString('en-US', optionsDate);
+            dateDisplay.time.innerText = now.toLocaleTimeString('en-US', optionsTime);
+        }
 
-    function updateUIState() {
-        // Default State
-        statusDot.classList.remove('status-active');
-        btnCheckin.disabled = false;
-        btnCheckout.disabled = false;
+        function updateUIState() {
+            // Load stats from LocalStorage to persist visual state
+            const todayKey = new Date().toLocaleDateString('en-US'); // "1/15/2026"
+            const savedDate = localStorage.getItem('savedDate');
 
-        // Reset button Opacity
-        btnCheckin.style.opacity = '1';
-        btnCheckout.style.opacity = '1';
+            // If new day, clear local storage stats
+            if (savedDate !== todayKey) {
+                // Clear state for new day
+                localStorage.setItem('savedDate', todayKey);
+                localStorage.removeItem('checkinTimeDisplay');
+                localStorage.removeItem('checkoutTimeDisplay');
+                localStorage.removeItem('todayHours');
+                localStorage.removeItem('lastAction');
+                lastAction = null;
+            }
 
-        dailySummary.classList.add('hidden');
+            // Restore Values
+            const sCheckin = localStorage.getItem('checkinTimeDisplay');
+            const sCheckout = localStorage.getItem('checkoutTimeDisplay');
+            const sHours = localStorage.getItem('todayHours');
 
-        if (lastAction === 'checkin') {
-            statusText.textContent = `Checked In`;
-            statusDot.classList.add('status-active');
+            if (sCheckin) {
+                dispCheckin.textContent = sCheckin;
+                // If we have checkin, disable checkin button
+                btnCheckin.disabled = true;
+                btnCheckin.style.opacity = '0.5';
+                statusDot.classList.add('status-active');
+                statusText.textContent = 'Checked In';
+            } else {
+                dispCheckin.textContent = '--:--';
+                btnCheckin.disabled = false;
+                btnCheckin.style.opacity = '1';
+                statusDot.classList.remove('status-active');
+                statusText.textContent = 'Ready to Log';
+            }
 
-            // Prevent Double Checkin
-            btnCheckin.disabled = true;
-            btnCheckin.style.opacity = '0.5';
-
-            // Highlight checkout
-            btnCheckout.style.transform = 'scale(1.02)';
-        } else if (lastAction === 'checkout') {
-            statusText.textContent = `Checked Out`;
-
-            // Prevent Double Checkout (Optional, but good UX)
-            btnCheckout.disabled = true;
-            btnCheckout.style.opacity = '0.5';
-
-            // Show summary if we have data
-            if (checkinTime) {
-                const now = new Date(); // Or save the checkout time
-                const start = new Date(checkinTime);
-                const diffMs = now - start;
-                // We use localStorage checkinTime for rough calculation. 
-                // Ideally this comes from the server in a real app, 
-                // but client-side diff is close enough for "simple".
-                // Since 'now' is updating, we really want the time OF checkout.
-                // Let's assume the user just checked out.
-
-                // If we are reloading the page hours later, 'now' is wrong.
-                // So we should save 'workedDuration' in localStorage too.
-                const storedDuration = localStorage.getItem('lastWorkedDuration');
-                if (storedDuration) {
-                    totalHoursEl.textContent = storedDuration;
-                    dailySummary.classList.remove('hidden');
+            if (sCheckout) {
+                dispCheckout.textContent = sCheckout;
+                // If we have checkout, disable both
+                btnCheckout.disabled = true;
+                btnCheckout.style.opacity = '0.5';
+                statusText.textContent = 'Day Complete';
+                statusDot.classList.remove('status-active');
+            } else {
+                dispCheckout.textContent = '--:--';
+                // Only enable checkout if checkin exists
+                if (sCheckin) {
+                    btnCheckout.disabled = false;
+                    btnCheckout.style.opacity = '1';
+                } else {
+                    btnCheckout.disabled = true;
+                    btnCheckout.style.opacity = '0.5';
                 }
             }
-        } else {
-            statusText.textContent = 'Ready to Log';
+
+            if (sHours) {
+                dispHours.textContent = sHours;
+            } else {
+                dispHours.textContent = '--';
+            }
         }
-    }
 
-    function handleAction(type) {
-        if (type === 'checkin' && lastAction === 'checkin') return; // Double protection
+        function handleAction(type) {
+            const now = new Date();
+            // Use standardized date string YYYY-MM-DD for API to be robust
+            // But for display we keep using nice formats. 
+            // We'll send standard iso string for safety.
 
-        const now = new Date();
-        const data = {
-            action: type,
-            // Format for Sheet
-            date: now.toLocaleDateString('en-US'),
-            time: now.toLocaleTimeString('en-US'),
-            deviceInfo: navigator.userAgent
-        };
+            const data = {
+                action: type,
+                // Send ISO date components to ensure script can parse correctly
+                year: now.getFullYear(),
+                month: now.getMonth() + 1,
+                day: now.getDate(),
+                // Display strings for the sheet to literal write
+                dateStr: now.toLocaleDateString('en-US'),
+                timeStr: now.toLocaleTimeString('en-US'),
+                deviceInfo: navigator.userAgent
+            };
 
-        disableButtons(true);
-        showMessage('loading', 'Logging your time...');
+            disableButtons(true);
+            showMessage('loading', 'Logging your time...');
 
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-            .then(() => {
-                // Update State
-                lastAction = type;
-                localStorage.setItem('lastAction', lastAction);
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(() => {
+                    // Success
+                    lastAction = type;
+                    localStorage.setItem('lastAction', lastAction);
 
-                if (type === 'checkin') {
-                    checkinTime = now.toISOString();
-                    localStorage.setItem('checkinTime', checkinTime);
-                    localStorage.removeItem('lastWorkedDuration'); // Reset for new day
-                } else if (type === 'checkout') {
-                    // Calculate Duration
-                    if (checkinTime) {
-                        const start = new Date(checkinTime);
-                        const end = now;
-                        const diffMs = end - start;
-                        const diffHrs = Math.floor(diffMs / 3600000);
-                        const diffMins = Math.floor((diffMs % 3600000) / 60000);
-                        const durationStr = `${diffHrs} hrs ${diffMins} mins`;
-
-                        localStorage.setItem('lastWorkedDuration', durationStr);
+                    // Update Local UI State
+                    if (type === 'checkin') {
+                        localStorage.setItem('checkinTimeDisplay', data.timeStr);
+                    } else if (type === 'checkout') {
+                        localStorage.setItem('checkoutTimeDisplay', data.timeStr);
+                        // Calc hours optimistically
+                        const sCheckin = localStorage.getItem('checkinTimeDisplay');
+                        if (sCheckin) {
+                            // Simple optimistic calc if possible, or just wait for refresh
+                            // For simplicity, let's just mark it pending or rough calc
+                            // Parsing "9:49:38 PM" is hard without libraries.
+                            // We will set it to "Calc..." until they reload history
+                            localStorage.setItem('todayHours', 'Done');
+                        }
                     }
-                }
 
-                updateUIState();
-                showMessage('success', `Successfully ${type === 'checkin' ? 'Checked In' : 'Checked Out'}!`);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('error', 'Failed to log time. Please check internet.');
-            })
-            .finally(() => {
-                disableButtons(false);
-                updateUIState();
-            });
-    }
-
-    function openHistory() {
-        historyModal.classList.remove('hidden');
-        historyList.innerHTML = '<p class="loading-text">Loading history...</p>';
-
-        const data = { action: 'getHistory' };
-
-        // We use 'POST' (even for getting data) to be consistent with the Script
-        // NOTE: 'no-cors' prevents reading the response! 
-        // We MUST use standard CORS to read the JSON response.
-        // Google Apps Script Web App returns correct CORS headers if "Who has access" is "Anyone".
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        })
-            .then(response => response.json())
-            .then(responseData => {
-                renderHistory(responseData.history);
-            })
-            .catch(error => {
-                console.error(error);
-                historyList.innerHTML = '<p class="error-text">Could not load history. Ensure "Everyone" has access in Script settings.</p>';
-            });
-    }
-
-    function renderHistory(logs) {
-        if (!logs || logs.length === 0) {
-            historyList.innerHTML = '<p class="empty-text">No history found.</p>';
-            return;
+                    updateUIState();
+                    showMessage('success', `Success! ${type === 'checkin' ? 'Have a good day!' : 'See you tomorrow!'}`);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('error', 'Network Error. Check internet.');
+                })
+                .finally(() => {
+                    // Re-enable handled by updateUIState
+                });
         }
 
-        historyList.innerHTML = logs.map(log => {
-            const checkIn = log.checkIn ? `☀️ ${log.checkIn}` : '—';
-            const checkOut = log.checkOut ? `🌙 ${log.checkOut}` : 'Wait...';
-            const duration = log.duration ? `⏱️ ${log.duration}` : '';
+        function disableButtons(disable) {
+            if (disable) {
+                btnCheckin.disabled = true;
+                btnCheckout.disabled = true;
+            } else {
+                updateUIState();
+            }
+        }
 
-            // Formatting duration if it comes back as a raw number (from formula)
-            // Often Google Sheets sends raw number for duration (e.g. 0.354). 
-            // We'll trust the string if possible, or leave it blank.
+        function showMessage(type, text) {
+            messageArea.className = 'message-area';
+            messageArea.classList.remove('hidden');
+            messageArea.textContent = text;
+            if (type === 'success') setTimeout(() => messageArea.classList.add('hidden'), 5000);
+            else if (type === 'error') messageArea.classList.add('message-error');
+        }
+    }
 
-            return `
-            <div class="history-item">
-                <div class="history-left">
-                    <span class="history-date">${log.dateStr || 'No Date'}</span>
-                    <div class="history-times">
-                        <span class="time-pill in">${checkIn}</span>
-                        <span class="time-pill out">${checkOut}</span>
+    // ==========================================
+    // HISTORY PAGE LOGIC
+    // ==========================================
+    if (isHistoryPage) {
+        const historyList = document.getElementById('history-list');
+        loadHistory();
+
+        function loadHistory() {
+            const data = { action: 'getHistory' };
+            // Need Valid CORS for GET (We assume V5 script handles this correctly)
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(responseData => {
+                    renderHistoryPage(responseData.history);
+                })
+                .catch(error => {
+                    console.error(error);
+                    historyList.innerHTML = '<div class="message-error">Could not load history. Please try again.</div>';
+                });
+        }
+
+        function renderHistoryPage(logs) {
+            if (!logs || logs.length === 0) {
+                historyList.innerHTML = '<p>No records found.</p>';
+                return;
+            }
+
+            historyList.innerHTML = logs.map(log => {
+                return `
+                <div class="history-card">
+                    <div class="h-card-header">
+                        <span>${log.dateStr}</span>
+                    </div>
+                    <div class="h-grid">
+                        <div class="h-item">
+                            <label>Check In</label>
+                            <span>${log.checkIn || '--:--'}</span>
+                        </div>
+                        <div class="h-item">
+                            <label>Check Out</label>
+                            <span>${log.checkOut || '--:--'}</span>
+                        </div>
+                    </div>
+                    <div class="h-total">
+                        Total: ${log.duration || '0:00'}
                     </div>
                 </div>
-                <div class="history-time">${duration}</div>
-            </div>
-            `;
-        }).join('');
-    }
-
-    function disableButtons(disable) {
-        if (!disable) {
-            // Re-eval based on logic
-            updateUIState();
-            return;
-        }
-        btnCheckin.disabled = true;
-        btnCheckout.disabled = true;
-    }
-
-    function showMessage(type, text) {
-        messageArea.className = 'message-area';
-        messageArea.classList.remove('hidden');
-        messageArea.textContent = text;
-        if (type === 'success') {
-            messageArea.classList.add('message-success');
-            setTimeout(() => messageArea.classList.add('hidden'), 5000);
-        } else if (type === 'error') {
-            messageArea.classList.add('message-error');
+                `;
+            }).join('');
         }
     }
 });

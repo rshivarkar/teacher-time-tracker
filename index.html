@@ -39,9 +39,26 @@
 
         <main>
             <div class="status-card" id="status-card">
-                <div class="status-indicator">
-                    <span class="dot"></span>
-                    <span id="status-text">Ready to Log</span>
+                <div class="status-main">
+                    <div class="status-indicator">
+                        <span class="dot"></span>
+                        <span id="status-text">Ready to Log</span>
+                    </div>
+                </div>
+                <!-- Expanded Stats in Card -->
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Check In</div>
+                        <div class="stat-value" id="disp-checkin">--:--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Check Out</div>
+                        <div class="stat-value" id="disp-checkout">--:--</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Hours</div>
+                        <div class="stat-value" id="disp-hours">--</div>
+                    </div>
                 </div>
             </div>
 
@@ -49,46 +66,24 @@
                 <button id="btn-checkin" class="action-btn checkin">
                     <span class="btn-icon">☀️</span>
                     <span class="btn-text">Check In</span>
-                    <span class="btn-sub">Start your day</span>
                 </button>
 
                 <button id="btn-checkout" class="action-btn checkout">
                     <span class="btn-icon">🌙</span>
                     <span class="btn-text">Check Out</span>
-                    <span class="btn-sub">End your day</span>
                 </button>
             </div>
 
-            <!-- Total Hours Today Display -->
-            <div id="daily-summary" class="daily-summary hidden">
-                <span class="summary-icon">⏱️</span>
-                <div class="summary-text">
-                    <h3>Total Worked</h3>
-                    <p id="total-hours">0 hrs 0 mins</p>
-                </div>
-            </div>
+            <!-- Removed old daily-summary div -->
 
             <div class="secondary-actions">
-                <button id="btn-history" class="text-btn">📜 View History</button>
+                <a href="history.html" class="text-btn" style="text-decoration:none">📜 View History Page</a>
             </div>
 
             <div id="message-area" class="message-area hidden"></div>
         </main>
 
-        <!-- History Modal -->
-        <div id="history-modal" class="modal-overlay hidden">
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h3>History</h3>
-                    <button id="btn-close-history" class="close-btn">×</button>
-                </div>
-                <div class="modal-body">
-                    <div id="history-list" class="history-list">
-                        <p class="loading-text">Loading...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
         <footer>
             <p>Teacher Time Tracker &copy; <span id="year">2025</span></p>

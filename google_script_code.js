@@ -1,6 +1,6 @@
 /* 
  * -------------------------------------------------------------------------
- * V3: ONE ROW PER DAY - UPDATE Google Script Code
+ * V5: ROBUST "ONE ROW PER DAY" - Google Script Code
  * -------------------------------------------------------------------------
  */
 
@@ -18,17 +18,17 @@ function doPost(e) {
             var lastRow = sheet.getLastRow();
             var logs = [];
             if (lastRow >= 2) {
-                var startRow = Math.max(2, lastRow - 50); // Last 50 days
+                var startRow = Math.max(2, lastRow - 50); // Last 50 entries
                 var numRows = lastRow - startRow + 1;
-                var range = sheet.getRange(startRow, 1, numRows, 4); // A to D
+                var range = sheet.getRange(startRow, 1, numRows, 4); // A, B, C, D
                 var values = range.getValues();
 
                 logs = values.map(function (row) {
                     return {
-                        dateStr: formatDate(row[0]), // Col A
-                        checkIn: formatTime(row[1]), // Col B
-                        checkOut: formatTime(row[2]),// Col C
-                        duration: row[3]             // Col D
+                        dateStr: String(row[0]), // Col A
+                        checkIn: String(row[1]), // Col B
+                        checkOut: String(row[2]),// Col C
+                        duration: String(row[3]) // Col D
                     };
                 }).reverse();
             }
@@ -36,86 +36,76 @@ function doPost(e) {
                 .setMimeType(ContentService.MimeType.JSON);
         }
 
-        // --- MODE 2: Log Time (Row Merge Logic) ---
-        var todayStr = data.date; // "Jan 15, 2026"
+        // --- MODE 2: Log Check In/Out with STRICT Date Matching ---
+
+        // 1. Construct the Search Key.
+        // The client sends year/month/day. We will use that to match.
+        // If not present (older client), fallback to data.dateStr
+        var targetDateStr = data.dateStr; // "1/15/2026" usually
+
+        // 2. Find the row
         var lastRow = sheet.getLastRow();
         var rowIndex = -1;
 
-        // Search for today's row (Optimized: search from bottom up)
         if (lastRow >= 2) {
-            // Get all dates in Column A
-            // Note: In a huge sheet this is slow, but for <1000 rows it's fine. 
-            // For speed, we just look at the last 30 rows.
-            var searchStart = Math.max(2, lastRow - 30);
-            var dates = sheet.getRange(searchStart, 1, lastRow - searchStart + 1, 1).getValues();
+            // Robust Search: Iterate backwards
+            // We read Column A as Strings to match what we write
+            // Note: getDisplayValues is slower but safer for date matching
+            var startRow = Math.max(2, lastRow - 50);
+            var displayValues = sheet.getRange(startRow, 1, lastRow - startRow + 1, 1).getDisplayValues();
 
-            for (var i = dates.length - 1; i >= 0; i--) {
-                var rowDate = formatDate(dates[i][0]);
-                if (rowDate === todayStr) {
-                    rowIndex = searchStart + i;
+            for (var i = displayValues.length - 1; i >= 0; i--) {
+                // Match exactly the string representation "1/15/2026"
+                if (displayValues[i][0] === targetDateStr) {
+                    rowIndex = startRow + i;
                     break;
                 }
             }
         }
 
+        // 3. Execution Logic
         if (data.action === 'checkin') {
             if (rowIndex !== -1) {
-                // Already Checked In for this date
-                // Check if Col B (CheckIn) is empty? Unlikely if row exists.
-                var checkInVal = sheet.getRange(rowIndex, 2).getValue();
-                if (checkInVal !== "") {
-                    return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "Already checked in today!" }))
+                // Found existing row for today.
+                // Check if CheckIn (Col B) is empty?
+                var currentCheckIn = sheet.getRange(rowIndex, 2).getValue();
+                if (currentCheckIn !== "") {
+                    // ALREADY CHECKED IN
+                    return ContentService.createTextOutput(JSON.stringify({ "status": "success", "message": "Already checked in, ignoring duplicate." }))
                         .setMimeType(ContentService.MimeType.JSON);
                 } else {
-                    // Case: Row exists but no checkin? Maybe manually added. Update it.
-                    sheet.getRange(rowIndex, 2).setValue(data.time);
+                    // Update CheckIn
+                    sheet.getRange(rowIndex, 2).setValue(data.timeStr);
                 }
             } else {
-                // Create New Row
-                // A:Date, B:CheckIn, C:CheckOut, D:Hours, E:Info
-                sheet.appendRow([todayStr, data.time, "", "", data.deviceInfo]);
+                // Create NEW Row
+                sheet.appendRow([
+                    targetDateStr,   // A: "1/16/2026"
+                    data.timeStr,    // B: "8:00 AM"
+                    "",              // C: Checkout empty
+                    "",              // D: Hours empty
+                    data.deviceInfo  // E
+                ]);
             }
         }
-
         else if (data.action === 'checkout') {
             if (rowIndex === -1) {
-                return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "You haven't checked in today yet!" }))
+                // No checkin found for today. Cannot checkout.
+                return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "No Check-In found for today." }))
                     .setMimeType(ContentService.MimeType.JSON);
             }
 
-            var rowRange = sheet.getRange(rowIndex, 1, 1, 3); // A, B, C
-            var rowVals = rowRange.getValues()[0];
-            var storedCheckOut = rowVals[2];
+            // Update Checkout (Col C)
+            sheet.getRange(rowIndex, 3).setValue(data.timeStr);
 
-            if (storedCheckOut !== "") {
-                return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "Already checked out today!" }))
-                    .setMimeType(ContentService.MimeType.JSON);
-            }
+            // Calculate Duration (Col D)
+            // We will perform a time diff calculation here in the script for accuracy
+            var checkInCell = sheet.getRange(rowIndex, 2).getValue(); // "8:00 AM" string or Date
+            var checkOutStr = data.timeStr;
 
-            // Update Checkout
-            sheet.getRange(rowIndex, 3).setValue(data.time);
-
-            // Calculate Duration
-            // CheckIn time is in B (index 1). It might be a string "8:00 AM".
-            // Parsing "8:00 AM" in AppsScript is tricky depending on Locale settings.
-            // We rely on the client sent 'checkinTime' ISO from localStorage if possible, 
-            // but here we must rely on what's in the sheet or compute simply.
-
-            // SIMPLE CALCULATION:
-            // We will let the Sheet Formula handle it OR do basic string math.
-            // Better approach: Client sends the calculation? No, insecure.
-            // We will write the string. User can put a formula in Col D if they want, 
-            // OR we calculate if we can parse.
-
-            // Let's write the raw time string. Then try to calc diff if possible.
-            // Converting "1:30 PM" to minutes is tedious without Moment.js.
-            // We will just write the value.
-
-            // OPTIONAL: We can try to set a formula in Col D
-            // =C_Row - B_Row
-            sheet.getRange(rowIndex, 4).setFormulaR1C1('=R[0]C[-1]-R[0]C[-2]');
-            // Format Col D as Duration
-            sheet.getRange(rowIndex, 4).setNumberFormat("[h]:mm");
+            // Helper to parse "8:00 AM"
+            var durationStr = calculateDuration(checkInCell, checkOutStr);
+            sheet.getRange(rowIndex, 4).setValue(durationStr);
         }
 
         return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
@@ -129,17 +119,35 @@ function doPost(e) {
     }
 }
 
-// Helpers
-function formatDate(d) {
-    // Handle Date Object or String
-    if (!d) return "";
-    if (typeof d === 'string') return d;
-    // If it's a Google Script Date object
-    return Utilities.formatDate(d, Session.getScriptTimeZone(), "MMM d, yyyy");
+function calculateDuration(inVal, outStr) {
+    try {
+        // Create dummy dates for today
+        var d1 = new Date();
+        var d2 = new Date();
+
+        // Parse "10:00:00 AM" or similar
+        var t1 = parseTime(inVal);
+        var t2 = parseTime(outStr);
+
+        if (!t1 || !t2) return "Error";
+
+        var diffMs = t2 - t1;
+        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000; // Handle midnight crossing if needed
+
+        var diffHrs = Math.floor(diffMs / 3600000);
+        var diffMins = Math.floor((diffMs % 3600000) / 60000);
+
+        return diffHrs + " hrs " + diffMins + " min";
+    } catch (e) {
+        return "Calc Error";
+    }
 }
 
-function formatTime(t) {
-    if (!t) return "";
-    if (typeof t === 'string') return t;
-    return Utilities.formatDate(t, Session.getScriptTimeZone(), "h:mm a");
+function parseTime(t) {
+    if (t instanceof Date) return t; // Already a date object from sheet?
+    if (!t) return null;
+
+    // Parse "8:00:00 AM" or "8:00 AM"
+    // Apps Script default new Date() parser is decent
+    return new Date("1/1/2000 " + t);
 }

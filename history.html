@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - Staff Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="https://fav.farm/📜" />
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-nav">
+                <a href="index.html" class="back-link">← Back</a>
+                <h2>History</h2>
+                <div style="width: 40px;"></div> <!-- Spacer -->
+            </div>
+        </header>
+
+        <main>
+            <div id="history-list" class="history-list-page">
+                <div class="loading-state">
+                    <span class="spinner">⏳</span>
+                    <p>Loading records...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        // Inline script to trigger history load immediately on this page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Access the function from script.js if possible, or we might need to separate logic.
+            // Since script.js is designed for index, let's create a dedicated history loader here 
+            // or modify script.js to detect page. 
+            // For simplicity, I will modify script.js to handle both pages.
+        });
+    </script>
+</body>
+
+</html>
