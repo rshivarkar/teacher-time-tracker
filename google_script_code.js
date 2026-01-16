@@ -95,12 +95,19 @@ function doPost(e) {
                     diffMs += 24 * 60 * 60 * 1000;
                 }
 
-                var diffHrs = Math.floor(diffMs / 3600000);
-                var diffMins = Math.floor((diffMs % 3600000) / 60000);
-                durationStr = diffHrs + " hrs " + diffMins + " min";
+                // Decimal Calculation (e.g. 2.5)
+                // Round to 2 decimal places
+                var totalHours = diffMs / 3600000;
+                durationStr = Math.round(totalHours * 100) / 100;
             }
 
             sheet.getRange(rowIndex, 4).setValue(durationStr);
+
+            // Return the duration so the UI can update immediately
+            return ContentService.createTextOutput(JSON.stringify({
+                "status": "success",
+                "duration": durationStr
+            })).setMimeType(ContentService.MimeType.JSON);
         }
 
         return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))

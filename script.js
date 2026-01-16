@@ -170,7 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-                .then(() => {
+                .then(res => res.json())
+                .then(responseData => {
                     // Success
                     lastAction = type;
                     localStorage.setItem('lastAction', lastAction);
@@ -180,13 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.setItem('checkinTimeDisplay', data.timeStr);
                     } else if (type === 'checkout') {
                         localStorage.setItem('checkoutTimeDisplay', data.timeStr);
-                        // Calc hours optimistically
-                        const sCheckin = localStorage.getItem('checkinTimeDisplay');
-                        if (sCheckin) {
-                            // Simple optimistic calc if possible, or just wait for refresh
-                            // For simplicity, let's just mark it pending or rough calc
-                            // Parsing "9:49:38 PM" is hard without libraries.
-                            // We will set it to "Calc..." until they reload history
+                        // Update Hours with the value returned from backend if available
+                        if (responseData.duration) {
+                            const fmt = formatDecimalDuration(responseData.duration);
+                            localStorage.setItem('todayHours', fmt);
+                        } else {
                             localStorage.setItem('todayHours', 'Done');
                         }
                     }
@@ -268,11 +267,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div class="h-total">
-                        Total: ${log.duration || '0:00'}
-                    </div>
+                    Total: ${formatDecimalDuration(log.duration) || '0.00'}
                 </div>
-                `;
+            </div>
+            `;
             }).join('');
         }
-    }
-});
+
+        function formatDecimalDuration(val) {
+            const num = parseFloat(val);
+            if (isNaN(num)) return val; // Fallback if old string format
+
+            // e.g. 2.5
+            const hrs = Math.floor(num);
+            const decimalPart = num - hrs;
+            const mins = Math.round(decimalPart * 60);
+
+            // "2.5 (2 hrs 30 mins)"
+            return `${num} (${hrs} hrs ${mins} mins)`;
+        }
+    });
+
