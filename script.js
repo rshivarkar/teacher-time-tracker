@@ -222,17 +222,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         historyList.innerHTML = logs.map(log => {
-            const isCheckin = log.action.toLowerCase().includes('check in') || log.action === 'checkin';
-            const icon = isCheckin ? '☀️' : '🌙';
-            const actionLabel = isCheckin ? 'Check In' : 'Check Out';
+            const checkIn = log.checkIn ? `☀️ ${log.checkIn}` : '—';
+            const checkOut = log.checkOut ? `🌙 ${log.checkOut}` : 'Wait...';
+            const duration = log.duration ? `⏱️ ${log.duration}` : '';
+
+            // Formatting duration if it comes back as a raw number (from formula)
+            // Often Google Sheets sends raw number for duration (e.g. 0.354). 
+            // We'll trust the string if possible, or leave it blank.
 
             return `
             <div class="history-item">
                 <div class="history-left">
-                    <span class="history-action">${icon} ${actionLabel}</span>
                     <span class="history-date">${log.dateStr || 'No Date'}</span>
+                    <div class="history-times">
+                        <span class="time-pill in">${checkIn}</span>
+                        <span class="time-pill out">${checkOut}</span>
+                    </div>
                 </div>
-                <div class="history-time">${log.timeStr || ''}</div>
+                <div class="history-time">${duration}</div>
             </div>
             `;
         }).join('');

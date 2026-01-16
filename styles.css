@@ -477,3 +477,27 @@ footer {
     color: var(--text-main);
 }
 
+
+/* History Pills */
+.history-times {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 5px;
+}
+
+.time-pill {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.time-pill.in {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.time-pill.out {
+    background: #eff6ff;
+    color: #1e3a8a;
+}
