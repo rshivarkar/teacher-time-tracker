@@ -296,58 +296,104 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // HISTORY PAGE LOGIC
     // ==========================================
+    // ==========================================
+    // HISTORY PAGE LOGIC
+    // ==========================================
     if (isHistoryPage) {
-        const historyList = document.getElementById('history-list');
-        loadHistory();
+        // Elements
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const btnFilter = document.getElementById('btn-filter');
+        const tbody = document.getElementById('history-body');
+        const loadingMsg = document.getElementById('loading-msg');
 
-        function loadHistory() {
-            const data = { action: 'getHistory' };
-            // Need Valid CORS for GET (We assume V5 script handles this correctly)
+        // Init Dropdowns
+        populateDropdowns();
+
+        // Initial Load (Current Month)
+        loadHistoryWithFilter();
+
+        // Listeners
+        btnFilter.addEventListener('click', loadHistoryWithFilter);
+
+        function populateDropdowns() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            // Months
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            months.forEach((m, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = m;
+                if (idx === currentMonth) opt.selected = true;
+                monthSelect.appendChild(opt);
+            });
+
+            // Years (Current year and last year)
+            [currentYear, currentYear - 1].forEach(y => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                yearSelect.appendChild(opt);
+            });
+        }
+
+        function loadHistoryWithFilter() {
+            const m = parseInt(monthSelect.value);
+            const y = parseInt(yearSelect.value);
+
+            // UI Loading
+            tbody.innerHTML = '';
+            loadingMsg.classList.remove('hidden');
+            loadingMsg.innerHTML = '<span class="spinner">⏳</span> Loading...';
+
+            const data = {
+                action: 'getHistory',
+                month: m,
+                year: y
+            };
+
             fetch(SCRIPT_URL, {
                 method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Correct V9 Header
                 body: JSON.stringify(data)
             })
                 .then(response => response.json())
                 .then(responseData => {
-                    renderHistoryPage(responseData.history);
+                    renderHistoryTable(responseData.history);
                 })
                 .catch(error => {
                     console.error(error);
-                    historyList.innerHTML = '<div class="message-error">Could not load history. Please try again.</div>';
+                    loadingMsg.innerHTML = '<div class="message-error">Could not load history.</div>';
                 });
         }
 
-        function renderHistoryPage(logs) {
+        function renderHistoryTable(logs) {
+            loadingMsg.classList.add('hidden'); // Hide loading
+
             if (!logs || logs.length === 0) {
-                historyList.innerHTML = '<p>No records found.</p>';
+                loadingMsg.innerHTML = '<p>No records found for this month.</p>';
+                loadingMsg.classList.remove('hidden');
                 return;
             }
 
-            historyList.innerHTML = logs.map(log => {
+            // Render Rows
+            tbody.innerHTML = logs.map(log => {
+                // Parse Day from Date string "1/16/2026"
+                let dayNum = log.dateStr.split('/')[1] || log.dateStr;
+
                 return `
-                <div class="history-card">
-                    <div class="h-card-header">
-                        <span>${log.dateStr}</span>
-                    </div>
-                    <div class="h-grid">
-                        <div class="h-item">
-                            <label>Check In</label>
-                            <span>${log.checkIn || '--:--'}</span>
-                        </div>
-                        <div class="h-item">
-                            <label>Check Out</label>
-                            <span>${log.checkOut || '--:--'}</span>
-                        </div>
-                    </div>
-                    <div class="h-total">
-                    Total: ${formatDecimalDuration(log.duration) || '0.00'}
-                </div>
-            </div>
-            `;
+                <tr>
+                    <td>${dayNum}</td>
+                    <td>${log.checkIn || '--'}</td>
+                    <td>${log.checkOut || '--'}</td>
+                    <td>${formatDecimalDuration(log.duration) || '0'}</td>
+                </tr>
+                `;
             }).join('');
         }
-
-        // End isHistoryPage block
     }
 
     function formatDecimalDuration(val) {

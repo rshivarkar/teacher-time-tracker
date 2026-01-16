@@ -23,12 +23,33 @@
         </header>
 
         <main>
-            <div id="history-list" class="history-list-page">
-                <div class="loading-state">
-                    <span class="spinner">⏳</span>
-                    <p>Loading records...</p>
+            <div class="filter-controls">
+                <select id="month-select" class="filter-select"></select>
+                <select id="year-select" class="filter-select"></select>
+                <button id="btn-filter" class="filter-btn">Go</button>
+            </div>
+
+            <div class="table-container">
+                <table id="history-table" class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        <!-- Data rows go here -->
+                    </tbody>
+                </table>
+                <div id="loading-msg" class="loading-state">
+                    <p>Select a month to view.</p>
                 </div>
             </div>
+
+            <!-- Hidden list for script.js legacy hook if needed, or we redefine script.js -->
+            <div id="history-list" style="display:none;"></div>
         </main>
     </div>
     <script src="script.js"></script>
