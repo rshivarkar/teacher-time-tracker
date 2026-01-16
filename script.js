@@ -21,6 +21,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loginOverlay) loginOverlay.classList.add('hidden');
     }
 
+    // CORS Warning for local file:// execution
+    if (window.location.protocol === 'file:') {
+        setTimeout(() => {
+            // Use the message area if available, or alert/console
+            const msg = "⚠️ Running locally? API calls will fail due to browser security (CORS). Please use the Live GitHub Link.";
+            console.warn(msg);
+            if (typeof showMessage === 'function') {
+                showMessage('error', msg);
+            } else {
+                // Fallback if showMessage isn't hoisted or defined yet (it is defined inside blocks, so might not be reachable here globally)
+                // Actually showMessage is inside if(isIndexPage).
+                // We'll let console handle it or check page type.
+                const errDiv = document.createElement('div');
+                errDiv.style.background = '#fee2e2';
+                errDiv.style.color = '#991b1b';
+                errDiv.style.padding = '10px';
+                errDiv.style.textAlign = 'center';
+                errDiv.style.fontWeight = 'bold';
+                errDiv.textContent = msg;
+                document.body.prepend(errDiv);
+            }
+        }, 1000);
+    }
+
     if (btnLogin) {
         btnLogin.addEventListener('click', attemptLogin);
         passcodeInput.addEventListener('keypress', (e) => {
