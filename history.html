@@ -29,20 +29,20 @@
                 <button id="btn-filter" class="filter-btn">Go</button>
             </div>
 
-            <div class="table-container">
-                <table id="history-table" class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Check In</th>
-                            <th>Check Out</th>
-                            <th>Hours</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-body">
-                        <!-- Data rows go here -->
-                    </tbody>
-                </table>
+            <div class="calendar-container">
+                <div class="calendar-header-row">
+                    <div>Sun</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                </div>
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- Days will be injected here -->
+                </div>
+
                 <div id="loading-msg" class="loading-state">
                     <p>Select a month to view.</p>
                 </div>

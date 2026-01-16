@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
                 .then(response => response.json())
                 .then(responseData => {
-                    renderHistoryTable(responseData.history);
+                    renderHistoryCalendarLogic(responseData.history);
                 })
                 .catch(error => {
                     console.error(error);
@@ -424,44 +424,70 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
 
-        function renderHistoryTable(logs) {
-            loadingMsg.classList.add('hidden'); // Hide loading
+        function renderHistoryCalendarLogic(logs) {
+            // NOTE: Renamed conceptually to renderHistoryCalendar, keeping function name for tool simplicity if preferred, 
+            // but the internal logic now builds a calendar grid.
+            loadingMsg.classList.add('hidden');
 
-            if (!logs || logs.length === 0) {
-                loadingMsg.innerHTML = '<p>No records found for this month.</p>';
-                loadingMsg.classList.remove('hidden');
-                document.getElementById('monthly-summary').classList.add('hidden'); // Hide summary
-                return;
-            }
+            const m = parseInt(monthSelect.value);
+            const y = parseInt(yearSelect.value);
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = ''; // Clear existing
 
-            // Calculation
+            // Map data for easy lookup: "16" -> logObj
+            const dataMap = {};
             let totalHours = 0;
 
-            // Render Rows
-            tbody.innerHTML = logs.map(log => {
-                // Parse Day from Date string "1/16/2026"
-                let dayNum = log.dateStr.split('/')[1] || log.dateStr;
+            if (logs && logs.length > 0) {
+                logs.forEach(log => {
+                    let dayNum = parseInt(log.dateStr.split('/')[1], 10); // "1/16/2026" -> 16
+                    dataMap[dayNum] = log;
 
-                // Sum hours
-                const h = parseFloat(log.duration);
-                if (!isNaN(h)) totalHours += h;
+                    const h = parseFloat(log.duration);
+                    if (!isNaN(h)) totalHours += h;
+                });
+            }
 
-                // Create Row
-                return `
-                <tr>
-                    <td>${dayNum}</td>
-                    <td>${log.checkIn || '--'}</td>
-                    <td>${log.checkOut || '--'}</td>
-                    <td>${formatDecimalDuration(log.duration) || '0'}</td>
-                </tr>
-                `;
-            }).join('');
+            // Calendar Math
+            const firstDay = new Date(y, m, 1).getDay(); // 0Sun - 6Sat
+            const daysInMonth = new Date(y, m + 1, 0).getDate(); // 28, 30, 31
+
+            // 1. Empty cells for previous month
+            for (let i = 0; i < firstDay; i++) {
+                const div = document.createElement('div');
+                div.className = 'cal-day empty';
+                grid.appendChild(div);
+            }
+
+            // 2. Actual Days
+            for (let d = 1; d <= daysInMonth; d++) {
+                const div = document.createElement('div');
+                div.className = 'cal-day';
+
+                const dayLabel = document.createElement('div');
+                dayLabel.className = 'day-num';
+                dayLabel.textContent = d;
+                div.appendChild(dayLabel);
+
+                if (dataMap[d]) {
+                    // We have data
+                    div.classList.add('has-data');
+                    const hoursVal = formatDecimalDuration(dataMap[d].duration).split(' ')[0]; // "9.37 (9 hrs...)" -> "9.37"
+
+                    const hoursBadge = document.createElement('div');
+                    hoursBadge.className = 'day-hours';
+                    hoursBadge.textContent = hoursVal + 'h';
+                    div.appendChild(hoursBadge);
+                }
+
+                grid.appendChild(div);
+            }
 
             // Show Summary
             const summaryDiv = document.getElementById('monthly-summary');
             const totalSpan = document.getElementById('month-total-hours');
             summaryDiv.classList.remove('hidden');
-            totalSpan.textContent = totalHours.toFixed(2); // "120.50"
+            totalSpan.textContent = totalHours.toFixed(2);
         }
     }
 
