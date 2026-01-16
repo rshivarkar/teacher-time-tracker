@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +11,19 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="https://fav.farm/🧸" />
 </head>
+
 <body>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-icon">🔒</div>
+            <h2>Staff Access</h2>
+            <p>Please enter the passcode to continue</p>
+            <input type="password" id="passcode-input" placeholder="Enter Passcode">
+            <button id="btn-login" class="login-btn">E n t e r</button>
+            <p id="login-error" class="login-error hidden">Incorrect Passcode</p>
+        </div>
+    </div>
+
     <div class="app-container">
         <header>
             <div class="logo-area">
@@ -55,4 +68,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>

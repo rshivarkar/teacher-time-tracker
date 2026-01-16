@@ -4,6 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQPnEjbJYvHqYQxqd8kiUA1fg7MHED_O9HCJAElHRFzyIrw-d3o3eaUMxLPVQ4YbwD/exec';
 
     // --- Elements ---
+    const loginOverlay = document.getElementById('login-overlay');
+    const passcodeInput = document.getElementById('passcode-input');
+    const btnLogin = document.getElementById('btn-login');
+    const loginError = document.getElementById('login-error');
+
     const dateDisplay = {
         day: document.getElementById('current-day'),
         date: document.getElementById('current-date'),
@@ -16,9 +21,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageArea = document.getElementById('message-area');
 
     // --- State Management ---
-    // We use localStorage to remember the state for this device/browser
-    let lastAction = localStorage.getItem('lastAction') || null; // 'checkin' or 'checkout'
+    let lastAction = localStorage.getItem('lastAction') || null;
     let lastActionTime = localStorage.getItem('lastActionTime') || null;
+
+    // --- Login Logic ---
+    const CORRECT_PASSCODE = "ds123";
+
+    // Check if already logged in this session
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+        loginOverlay.classList.add('hidden');
+    }
+
+    btnLogin.addEventListener('click', attemptLogin);
+    passcodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') attemptLogin();
+    });
+
+    function attemptLogin() {
+        if (passcodeInput.value === CORRECT_PASSCODE) {
+            sessionStorage.setItem('isLoggedIn', 'true');
+            loginOverlay.classList.add('hidden');
+            loginError.classList.add('hidden');
+        } else {
+            loginError.classList.remove('hidden');
+            passcodeInput.value = '';
+            passcodeInput.focus();
+        }
+    }
 
     // --- Initialization ---
     updateDateTime();
