@@ -21,14 +21,15 @@ function doPost(e) {
                 var startRow = Math.max(2, lastRow - 50);
                 var numRows = lastRow - startRow + 1;
                 var range = sheet.getRange(startRow, 1, numRows, 4);
-                var values = range.getValues();
+                // USE getDisplayValues to get "1/16/2026" instead of raw Date objects
+                var values = range.getDisplayValues();
 
                 logs = values.map(function (row) {
                     return {
-                        dateStr: String(row[0]),
-                        checkIn: String(row[1]),
-                        checkOut: String(row[2]),
-                        duration: String(row[3])
+                        dateStr: row[0], // Now "1/16/2026"
+                        checkIn: row[1], // "1:07:47 AM"
+                        checkOut: row[2], // "1:10:53 AM"
+                        duration: row[3] // "0.05"
                     };
                 }).reverse();
             }
