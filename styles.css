@@ -325,3 +325,155 @@ footer {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Daily Summary */
+.daily-summary {
+    background: white;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 1.5rem;
+    box-shadow: var(--shadow-soft);
+    animation: fadeIn 0.4s ease;
+}
+
+.summary-icon {
+    font-size: 2rem;
+    background: #f1f5f9;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.summary-text h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--text-sub);
+    letter-spacing: 0.05em;
+}
+
+.summary-text p {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Secondary Actions */
+.secondary-actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: var(--text-sub);
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Sheet style on mobile */
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-card {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 20px 20px 0 0;
+    padding: 1.5rem;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s;
+}
+
+@media (min-width: 480px) {
+    .modal-overlay {
+        align-items: center;
+    }
+    .modal-card {
+        border-radius: 20px;
+        width: 90%;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-sub);
+}
+
+.modal-body {
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.history-action {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.history-date {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+}
+
+.history-time {
+    font-weight: 600;
+    color: var(--text-main);
+}
+

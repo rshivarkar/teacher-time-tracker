@@ -1,44 +1,66 @@
 /* 
  * -------------------------------------------------------------------------
- * COPY THIS ENTIRE FILE
- * -------------------------------------------------------------------------
- * 1. Go to your Google Sheet: 
- *    https://docs.google.com/spreadsheets/d/1j_FHdLKc4vswfT6i5IGor_b-W5m9u2BDo45aTlaxyCQ/edit
- * 2. Click "Extensions" (top menu) -> "Apps Script"
- * 3. Delete any code there, and PASTE this code in.
- * 4. Click the blue "Deploy" button (top right) -> "New deployment"
- * 5. Select type: "Web app"
- * 6. Set "Who has access" to "Anyone" (Critical!)
- * 7. Click "Deploy" and copy the "Web app URL"
+ * UPDATED CODE (V2) - COPY THIS ENTIRE FILE
  * -------------------------------------------------------------------------
  */
 
 function doPost(e) {
+    var lock = LockService.getScriptLock();
+    lock.tryLock(10000); // Prevent concurrent writing issues
+
     try {
         var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+        var rawData = e.postData.contents;
+        var data = JSON.parse(rawData);
 
-        // Parse the data sent from the nice button app
-        var data = JSON.parse(e.postData.contents);
+        // --- MODE 1: Fetch History ---
+        if (data.action === 'getHistory') {
+            var lastRow = sheet.getLastRow();
+            var logs = [];
 
-        // Append the row: Timestamp | Action | Date | Time | Device
+            // Only read if there is data (Row 1 is headers, data starts Row 2)
+            if (lastRow >= 2) {
+                // Perform efficient read: Get columns A (Time) through C (Date)
+                // We assume: Col A=Timestamp, Col B=Action, Col C=DateStr, Col D=TimeStr
+                // Fetching last 100 rows to find history
+                var startRow = Math.max(2, lastRow - 100);
+                var numRows = lastRow - startRow + 1;
+                var range = sheet.getRange(startRow, 1, numRows, 4);
+                var values = range.getValues();
+
+                // Convert to clean JSON
+                logs = values.map(function (row) {
+                    return {
+                        timestamp: row[0],
+                        action: row[1],
+                        dateStr: row[2], // The string date "Jan 15, 2026"
+                        timeStr: row[3]  // The string time "8:00 AM"
+                    };
+                }).reverse(); // Newest first
+            }
+
+            return ContentService.createTextOutput(JSON.stringify({
+                status: "success",
+                history: logs
+            })).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // --- MODE 2: Log Check-in/Out ---
         sheet.appendRow([
             new Date(),       // A: System Timestamp
             data.action,      // B: Check In or Out
-            data.date,        // C: Date
-            data.time,        // D: Time
-            data.deviceInfo   // E: Info about the phone/laptop
+            data.date,        // C: Date string
+            data.time,        // D: Time string
+            data.deviceInfo   // E: Info
         ]);
 
-        // Return a success message
         return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
             .setMimeType(ContentService.MimeType.JSON);
 
     } catch (error) {
         return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
             .setMimeType(ContentService.MimeType.JSON);
+    } finally {
+        lock.releaseLock();
     }
-}
-
-function doGet(e) {
-    return ContentService.createTextOutput("Hello! The Staff Tracker backend is running. Use the buttons to send data.");
 }

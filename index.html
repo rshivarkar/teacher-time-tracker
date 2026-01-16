@@ -59,8 +59,36 @@
                 </button>
             </div>
 
+            <!-- Total Hours Today Display -->
+            <div id="daily-summary" class="daily-summary hidden">
+                <span class="summary-icon">⏱️</span>
+                <div class="summary-text">
+                    <h3>Total Worked</h3>
+                    <p id="total-hours">0 hrs 0 mins</p>
+                </div>
+            </div>
+
+            <div class="secondary-actions">
+                <button id="btn-history" class="text-btn">📜 View History</button>
+            </div>
+
             <div id="message-area" class="message-area hidden"></div>
         </main>
+
+        <!-- History Modal -->
+        <div id="history-modal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>History</h3>
+                    <button id="btn-close-history" class="close-btn">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="history-list" class="history-list">
+                        <p class="loading-text">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <footer>
             <p>Teacher Time Tracker &copy; <span id="year">2025</span></p>
