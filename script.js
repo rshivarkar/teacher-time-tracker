@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const monthSelect = document.getElementById('month-select');
         const yearSelect = document.getElementById('year-select');
         const btnFilter = document.getElementById('btn-filter');
-        const tbody = document.getElementById('history-body');
+        const calendarGrid = document.getElementById('calendar-grid');
         const loadingMsg = document.getElementById('loading-msg');
 
         // Init Dropdowns
@@ -399,7 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = parseInt(yearSelect.value);
 
             // UI Loading
-            tbody.innerHTML = '';
+            if (calendarGrid) calendarGrid.innerHTML = '';
+            loadingMsg.classList.remove('hidden');
             loadingMsg.classList.remove('hidden');
             loadingMsg.innerHTML = '<span class="spinner">⏳</span> Loading...';
 
