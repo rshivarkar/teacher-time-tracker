@@ -40,6 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const HOLIDAYS_2026 = {
+        "1/1/2026": "New Year's Day",
+        "5/25/2026": "Memorial Day",
+        "6/19/2026": "Juneteenth",
+        "7/3/2026": "Independence Day",
+        "9/7/2026": "Labor Day",
+        "11/11/2026": "Veterans Day",
+        "11/20/2026": "Diwali",
+        "11/26/2026": "Thanksgiving Day",
+        "11/27/2026": "Black Friday"
+    };
+
     // ==========================================
     // INDEX PAGE LOGIC
     // ==========================================
@@ -62,13 +74,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // State
         let lastAction = localStorage.getItem('lastAction') || null;
+        let isHolidayMode = false;
 
         const btnRefresh = document.getElementById('btn-refresh');
 
         // Initialization
         updateDateTime();
+        // Check Holiday/Weekend immediately
+        checkRestrictions();
+
         setInterval(updateDateTime, 1000);
-        updateUIState();
 
         // Setup Listeners
         btnCheckin.addEventListener('click', () => handleAction('checkin'));
@@ -104,6 +119,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnRefresh.textContent = originalText;
                     btnRefresh.disabled = false;
                 });
+        }
+
+        function checkRestrictions() {
+            const now = new Date();
+            const dayOfWeek = now.getDay(); // 0Sun, 6Sat
+            const dateStr = now.toLocaleDateString('en-US'); // "1/1/2026"
+
+            // Look for existing holiday/weekend message
+            let msgEl = document.getElementById('holiday-msg');
+            if (msgEl) msgEl.remove();
+
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                isHolidayMode = true;
+                disableButtons(true);
+                showRestrictionMessage("It's the weekend! Relax. 🏖️");
+            } else if (HOLIDAYS_2026[dateStr]) {
+                isHolidayMode = true;
+                disableButtons(true);
+                showRestrictionMessage(`Happy ${HOLIDAYS_2026[dateStr]}! 🎆`);
+            } else {
+                isHolidayMode = false; // Normal day
+                updateUIState(); // Restore state
+            }
+        }
+
+        function showRestrictionMessage(msg) {
+            const container = document.querySelector('.status-card'); // Insert inside status card above buttons
+            if (!container) return;
+
+            const div = document.createElement('div');
+            div.id = 'holiday-msg';
+            div.className = 'holiday-message';
+            div.textContent = msg;
+
+            // Insert before the button group
+            const btnGroup = document.querySelector('.button-group');
+            if (btnGroup) container.insertBefore(div, btnGroup);
         }
 
         function syncTodayFromHistory(historyLog) {
@@ -156,6 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function updateUIState() {
+            if (isHolidayMode) return; // Don't run normal logic if blocked
+
             // Load stats from LocalStorage to persist visual state
             const todayKey = new Date().toLocaleDateString('en-US'); // "1/15/2026"
             const savedDate = localStorage.getItem('savedDate');
@@ -376,14 +430,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!logs || logs.length === 0) {
                 loadingMsg.innerHTML = '<p>No records found for this month.</p>';
                 loadingMsg.classList.remove('hidden');
+                document.getElementById('monthly-summary').classList.add('hidden'); // Hide summary
                 return;
             }
+
+            // Calculation
+            let totalHours = 0;
 
             // Render Rows
             tbody.innerHTML = logs.map(log => {
                 // Parse Day from Date string "1/16/2026"
                 let dayNum = log.dateStr.split('/')[1] || log.dateStr;
 
+                // Sum hours
+                const h = parseFloat(log.duration);
+                if (!isNaN(h)) totalHours += h;
+
+                // Create Row
                 return `
                 <tr>
                     <td>${dayNum}</td>
@@ -393,6 +456,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>
                 `;
             }).join('');
+
+            // Show Summary
+            const summaryDiv = document.getElementById('monthly-summary');
+            const totalSpan = document.getElementById('month-total-hours');
+            summaryDiv.classList.remove('hidden');
+            totalSpan.textContent = totalHours.toFixed(2); // "120.50"
         }
     }
 
