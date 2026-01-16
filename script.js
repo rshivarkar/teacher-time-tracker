@@ -145,10 +145,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
 
+        // Helper for consistent date keys (M/D/YYYY) - Solver for Mobile Mismatch
+        function getFormattedDate(dateObj) {
+            // Note: getMonth() is 0-indexed.
+            return `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`;
+        }
+
         function checkRestrictions() {
             const now = new Date();
             const dayOfWeek = now.getDay(); // 0Sun, 6Sat
-            const dateStr = now.toLocaleDateString('en-US'); // "1/1/2026"
+            const dateStr = getFormattedDate(now);
 
             // Look for existing holiday/weekend message
             let msgEl = document.getElementById('holiday-msg');
@@ -185,8 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
         function syncTodayFromHistory(historyLog) {
             const now = new Date();
             // Force strict format matching the sheet: "1/16/2026" (M/D/YYYY)
-            // Note: getMonth() is 0-indexed
-            const todayStr = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+            // Consistent with getFormattedDate
+            const todayStr = getFormattedDate(now);
 
             // 2. Find row
             const todaysEntry = historyLog.find(log => log.dateStr === todayStr);
@@ -195,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Found data! Only update if the server actually has something.
                 if (todaysEntry.checkIn) localStorage.setItem('checkinTimeDisplay', todaysEntry.checkIn);
 
-                // If server has checkout, save it.
+                // If server has checkout, save it. 
                 if (todaysEntry.checkOut) {
                     localStorage.setItem('checkoutTimeDisplay', todaysEntry.checkOut);
                 }
@@ -205,13 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('todayHours', fmt);
                 }
             } else {
-                // No entry found for todayStr.
+                // No entry found for todayStr. 
                 // Only clear if we are sure it's a new day or deleted data.
                 if (localStorage.getItem('savedDate') === todayStr) {
-                    // Safe to clear?
-                    // Let's be conservative: only clear if we literally found NO match in recent history
-                    // and we are sure the user isn't offline.
-                    // But since we are here, fetch worked.
                     localStorage.removeItem('checkinTimeDisplay');
                     localStorage.removeItem('checkoutTimeDisplay');
                     localStorage.removeItem('todayHours');
@@ -235,7 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isHolidayMode) return; // Don't run normal logic if blocked
 
             // Load stats from LocalStorage to persist visual state
-            const todayKey = new Date().toLocaleDateString('en-US'); // "1/15/2026"
+            // CRITICAL FIX: Use consistent getFormattedDate() instead toLocaleDateString
+            // varying across Desktop/Mobile browsers.
+            const todayKey = getFormattedDate(new Date()); // "1/16/2026"
             const savedDate = localStorage.getItem('savedDate');
 
             // If new day, clear local storage stats
