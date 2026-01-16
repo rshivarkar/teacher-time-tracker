@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
     // REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT WEB APP URL
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdfyOuS5aytKlyCEnXFXuDmuh_htiFXSVOCw_uhkDcLgd4RIZMGphInRAwEZReePWq/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxF4Of_MkUkxvrqpMMlsGOtw5emkyiLHi-dMWOKf4OeYGFmBsP-_qbS40xjperoV6_k/exec';
 
     // --- Elements ---
     const loginOverlay = document.getElementById('login-overlay');
