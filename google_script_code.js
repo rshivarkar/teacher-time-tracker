@@ -18,20 +18,42 @@ function doPost(e) {
             var lastRow = sheet.getLastRow();
             var logs = [];
             if (lastRow >= 2) {
-                var startRow = Math.max(2, lastRow - 50);
-                var numRows = lastRow - startRow + 1;
-                var range = sheet.getRange(startRow, 1, numRows, 4);
-                // USE getDisplayValues to get "1/16/2026" instead of raw Date objects
-                var values = range.getDisplayValues();
+                // Performance: Read all data to filter accurately
+                // Assuming < 5000 rows for now, this is fast.
+                var range = sheet.getRange(2, 1, lastRow - 1, 4);
+                var values = range.getDisplayValues(); // Get strings "1/16/2026"
 
-                logs = values.map(function (row) {
+                var reqMonth = data.month; // 0-11
+                var reqYear = data.year;   // 2026
+
+                logs = values.filter(function (row) {
+                    // Parse Date "1/16/2026"
+                    var dateParts = row[0].split('/');
+                    if (dateParts.length !== 3) return false;
+
+                    var rMonth = parseInt(dateParts[0], 10) - 1; // 1 -> 0
+                    var rYear = parseInt(dateParts[2], 10);
+
+                    // If filter params exist, match them. Else return true (or limit to last 50).
+                    if (reqMonth !== undefined && reqYear !== undefined) {
+                        return rMonth === reqMonth && rYear === reqYear;
+                    }
+                    return true;
+                }).map(function (row) {
                     return {
-                        dateStr: row[0], // Now "1/16/2026"
-                        checkIn: row[1], // "1:07:47 AM"
-                        checkOut: row[2], // "1:10:53 AM"
-                        duration: row[3] // "0.05"
+                        dateStr: row[0],
+                        checkIn: row[1],
+                        checkOut: row[2],
+                        duration: row[3]
                     };
-                }).reverse();
+                }); // No reverse yet, we want chronological for the table usually? Or reverse?
+                // User asked for a list for the month. Usually Table is Top->Down (1st to 30th).
+                // Let's keep it chronological for the table view.
+
+                // If no filter was provided (default load), take last 50 and reverse
+                if (reqMonth === undefined) {
+                    logs = logs.slice(-50).reverse();
+                }
             }
             return ContentService.createTextOutput(JSON.stringify({ status: "success", history: logs }))
                 .setMimeType(ContentService.MimeType.JSON);
