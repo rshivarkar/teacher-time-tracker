@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(res => res.json())
                 .then(responseData => {
                     if (responseData.status === 'success' && responseData.history) {
-                        syncTodayFromHistory(responseData.history);
+                        syncTodayFromHistory(responseData.history, true);
                         showMessage('success', 'Status updated from server!');
                     }
                 })
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btnGroup) container.insertBefore(div, btnGroup);
         }
 
-        function syncTodayFromHistory(historyLog) {
+        function syncTodayFromHistory(historyLog, forceUpdate = false) {
             const now = new Date();
             // Force strict format matching the sheet: "1/16/2026" (M/D/YYYY)
             // Consistent with getFormattedDate
@@ -210,7 +210,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const fmt = formatDecimalDuration(todaysEntry.duration);
                     localStorage.setItem('todayHours', fmt);
                 }
+            } else if (forceUpdate) {
+                // If user CLICKED Refresh and server has NOTHING for today, we must respect that.
+                // This handles the case where maybe the user DELETED the row in the sheet.
+                if (localStorage.getItem('savedDate') === todayStr) {
+                    localStorage.removeItem('checkinTimeDisplay');
+                    localStorage.removeItem('checkoutTimeDisplay');
+                    localStorage.removeItem('todayHours');
+                }
             } else {
+                // Background sync or init:
                 // No entry found for todayStr. 
                 // Only clear if we are sure it's a new day or deleted data.
                 if (localStorage.getItem('savedDate') === todayStr) {
