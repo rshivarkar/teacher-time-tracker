@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
     // Update V5: Robust Date Handling
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzwSB4qmhfaA5kXGjG2wTSHAvlM2gYoSb3XCSTgZsN-Tvgj5trQs05eUzFzJtZNShIv/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwR90qRhF3NUEI6aJktagUVcm0JcV2SiX-6aIfqMR6oRfCGd9R-uFisppXdd9oOqBw/exec';
 
     // --- PAGE DETECTION ---
     const isHistoryPage = !!document.getElementById('history-list');
