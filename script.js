@@ -274,17 +274,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
         }
 
-        function formatDecimalDuration(val) {
-            const num = parseFloat(val);
-            if (isNaN(num)) return val; // Fallback if old string format
+        // End isHistoryPage block
+    }
 
-            // e.g. 2.5
-            const hrs = Math.floor(num);
-            const decimalPart = num - hrs;
-            const mins = Math.round(decimalPart * 60);
+    function formatDecimalDuration(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return val; // Fallback if old string format
 
-            // "2.5 (2 hrs 30 mins)"
-            return `${num} (${hrs} hrs ${mins} mins)`;
-        }
-    });
+        // e.g. 2.5
+        const hrs = Math.floor(num);
+        const decimalPart = num - hrs;
+        const mins = Math.round(decimalPart * 60);
+
+        // "2.5 (2 hrs 30 mins)"
+        return `${num} (${hrs} hrs ${mins} mins)`;
+    }
+});
 
