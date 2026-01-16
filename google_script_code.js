@@ -124,7 +124,13 @@ function doPost(e) {
                 durationStr = Math.round(totalHours * 100) / 100;
             }
 
-            sheet.getRange(rowIndex, 4).setValue(durationStr);
+            // --- SHEET WRITE: FORMULA ---
+            // Formula: =(C{row}-B{row} + (C{row}<B{row})) * 24
+            var formula = '=(C' + rowIndex + '-B' + rowIndex + '+(C' + rowIndex + '<B' + rowIndex + '))*24';
+
+            var cell = sheet.getRange(rowIndex, 4);
+            cell.setFormula(formula);
+            cell.setNumberFormat("0.00"); // Ensure it looks like "2.50"
 
             // Return the duration so the UI can update immediately
             return ContentService.createTextOutput(JSON.stringify({
