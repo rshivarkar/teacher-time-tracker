@@ -497,12 +497,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dataMap[d]) {
                     // We have data
                     div.classList.add('has-data');
-                    const hoursVal = formatDecimalDuration(dataMap[d].duration).split(' ')[0]; // "9.37 (9 hrs...)" -> "9.37"
 
-                    const hoursBadge = document.createElement('div');
-                    hoursBadge.className = 'day-hours';
-                    hoursBadge.textContent = hoursVal + 'h';
-                    div.appendChild(hoursBadge);
+                    let hoursVal = "0";
+                    if (dataMap[d].duration) {
+                        hoursVal = formatDecimalDuration(dataMap[d].duration).split(' ')[0];
+                    }
+
+                    if (hoursVal && hoursVal !== "NaN" && parseFloat(hoursVal) > 0) {
+                        const hoursBadge = document.createElement('div');
+                        hoursBadge.className = 'day-hours';
+                        hoursBadge.textContent = hoursVal + 'h';
+                        div.appendChild(hoursBadge);
+                    }
                 }
 
                 grid.appendChild(div);
