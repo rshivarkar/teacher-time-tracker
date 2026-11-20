@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "7/3/2026": "Independence Day",
         "9/7/2026": "Labor Day",
         "11/11/2026": "Veterans Day",
-        "11/20/2026": "Diwali",
         "11/26/2026": "Thanksgiving Day",
         "11/27/2026": "Black Friday"
     };
